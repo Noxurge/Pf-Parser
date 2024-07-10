@@ -1,14 +1,23 @@
 import os
+import argparse
 from datetime import datetime
 import pyscca
 import sys
 import time
 
-if len(sys.argv) != 2:
-    sys.exit()
+# Argument Parser
+parsing = argparse.ArgumentParser(description="Parser for Windows Prefetch Files using libscca library.")
+parsing.add_argument('-f', '--file', type=str, help="Prefetch file to parse", required=True)
+parsing.add_argument('-i', '--info', action='store_true', help="Show files information")
+parsing.add_argument('-o', '--output', help="Save the output to a file", metavar="output")
 
-file = sys.argv[1]
-if pyscca.check_file_signature(file) == False:
+if len(sys.argv) == 1:
+    parsing.print_help()
+    sys.exit(1)
+
+args = parsing.parse_args()
+
+if not pyscca.check_file_signature(args.file):
     print("\n\033[31mThe file is not a Prefetch File! Exiting the program...\033[0m\n")
     sys.exit(1)
 
@@ -24,8 +33,9 @@ for char in banner:
     print(f'{char}', end='', flush=True)
     time.sleep(0.006)
 
-scca = pyscca.open(file)
-metadata = os.stat(file)
+print("\n\n")
+scca = pyscca.open(args.file)
+metadata = os.stat(args.file)
 
 # Last Run Time Function
 def search():
@@ -33,17 +43,19 @@ def search():
     last_run = scca.get_last_run_time_as_integer(x)
     if last_run > 0:
         date = scca.get_last_run_time(x).strftime("%Y-%m-%d %H:%M:%S")
-        print(f"Last run: \033[93m{date}\033[0m\n")
+        return f"Last run: \033[93m{date}\033[0m\n"
 
 # Device Name Function
 def volume_info():
+    vol = []
     for i in range(scca.number_of_volumes):
         name = scca.get_volume_information(i).device_path
         creation_time = scca.get_volume_information(i).creation_time.strftime('%Y-%m-%d %H:%M:%S')
         file_count = scca.number_of_filenames
         serial = format(scca.get_volume_information(i).serial_number,'x').upper()
-        print("Volume Information:\n")
-        return print(f"Name: {name} Serial: {serial} Created: {creation_time} Number Files: {file_count}\n")
+        volume = f"Volume Information:\n\nName: {name} Serial: {serial} Created: {creation_time} Number Files: {file_count}"
+        vol.append(volume)
+    return vol
 
 # Function of Filenames
 def files_func():
@@ -54,14 +66,14 @@ def files_func():
     format_str = "{:0" + str(num_digits) + "d}: {}"
     for number, file in enumerate(files):
         result += format_str.format(number, file) + "\n"
-    print(result.strip())
+    return result.strip()
 
 # Information about the file
 def file_info():
     win_version = scca.get_format_version()
     version = ''
-    print(f"Executable name: {scca.executable_filename}")
-    print(f"Hash: {format(scca.prefetch_hash, 'x').upper()}")
+    executable = f"Executable name: {scca.executable_filename}"
+    hash_file = f"Hash: {format(scca.prefetch_hash, 'x').upper()}"
     if win_version == 30:
         version = 'Windows 10 or Windows 11'
     elif win_version == 26:
@@ -69,22 +81,37 @@ def file_info():
     elif win_version == 23:
         version = 'Windows Vista or Windows 7'
     elif win_version == 17:
-        version = 'Windows Version: Windows XP or Windows 2003'
+        version = 'Windows XP or Windows 2003'
     else:
         version = 'Not possible view version information!'
-    print(f"Windows Version: {version}")
+    return f"{executable}\n{hash_file}\nWindows Version: {version}"
 
 def main():
     # File Metadata
-    data_de_criacao = datetime.fromtimestamp(metadata.st_ctime).strftime('%Y-%m-%d %H:%M:%S')
-    data_de_modificacao = datetime.fromtimestamp(metadata.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
-    data_de_ultimo_acesso = datetime.fromtimestamp(metadata.st_atime).strftime('%Y-%m-%d %H:%M:%S')
-    print(f"\n\nCreated on: {data_de_criacao}\nModified on: {data_de_modificacao}\nLast accessed on: {data_de_ultimo_acesso}\n")
-    # Calling Functions
-    file_info()
-    search()
-    volume_info()
-    files_func()
+    creation_date = datetime.fromtimestamp(metadata.st_ctime).strftime('%Y-%m-%d %H:%M:%S')
+    modify_date = datetime.fromtimestamp(metadata.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+    last_access_date = datetime.fromtimestamp(metadata.st_atime).strftime('%Y-%m-%d %H:%M:%S')
+    date_message = f"Created on: {creation_date}\nModified on: {modify_date}\nLast accessed on: {last_access_date}\n"
+    print(date_message)
+    file_info_str = file_info()
+    search_str = search()
+    volume_info_list = volume_info()
+    print(f"{file_info_str}\n{search_str}")
+    for volumes in volume_info_list:
+        print(volumes)
+    if args.info:
+        files_func_str = files_func()
+        print(files_func_str)
+    if args.output:
+        with open(args.output, 'w') as f:
+            f.write(date_message + "\n")
+            f.write(file_info_str + "\n")
+            f.write(search_str + "\n")
+            for volume in volume_info_list:
+                f.write(volume + "\n")
+            if args.info:
+                f.write(files_func_str + "\n\n")
+        print(f"\nDatas saved in {args.output}")
 
 # Initializing the main function
 main()
