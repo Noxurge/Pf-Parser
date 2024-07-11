@@ -9,7 +9,7 @@ import time
 parsing = argparse.ArgumentParser(description="Parser for Windows Prefetch Files using libscca library.")
 parsing.add_argument('-f', '--file', type=str, help="Prefetch file to parse", required=True)
 parsing.add_argument('-i', '--info', action='store_true', help="Show files information")
-parsing.add_argument('-o', '--output', help="Save the output to a file", metavar="output")
+parsing.add_argument('-o', help="Save the output to a file", metavar="output")
 
 if len(sys.argv) == 1:
     parsing.print_help()
@@ -102,8 +102,8 @@ def main():
     if args.info:
         files_func_str = files_func()
         print(files_func_str)
-    if args.output:
-        with open(args.output, 'w') as f:
+    if args.o:
+        with open(args.o, 'w') as f:
             f.write(date_message + "\n")
             f.write(file_info_str + "\n")
             f.write(search_str + "\n")
@@ -111,7 +111,7 @@ def main():
                 f.write(volume + "\n")
             if args.info:
                 f.write(files_func_str + "\n\n")
-        print(f"\nDatas saved in {args.output}")
+        print(f"\nDatas saved in {args.o}")
 
 # Initializing the main function
 main()
