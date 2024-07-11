@@ -32,7 +32,7 @@ Simple Usage Example: python3 nox_pfparser.py -f FILE.pf
 ---
 # Credits
 
-I want to demonstrate my respect to other peoples that dedicated their time to write informations about prefetch files and also make other tools. I'm tried maked a multifuncional version of Eric Zimmerman Tool using python.
+I want to demonstrate my respect to other peoples that dedicated their time to write informations about prefetch files and also make other tools. I'm tried maked a multifunctional version of Eric Zimmerman Tool using python.
 
 This is the links about references:
 - Bromiley Article - https://bromiley.medium.com/parse-windows-10-prefetch-files-in-linux-51a764cc045a
